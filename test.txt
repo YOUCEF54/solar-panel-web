@@ -1,0 +1,23 @@
+app/
+  login/page.tsx
+  upload/page.tsx
+  dashboard/page.tsx
+  grid/page.tsx
+
+components/
+  ImageUpload.tsx
+  PredictionCard.tsx
+  ScoresChart.tsx
+  HistoryTable.tsx
+  PanelGridOverlay.tsx
+
+lib/
+  api.ts
+  firebase.ts
+  auth.ts
+
+store/
+  userStore.ts
+
+types/
+  prediction.ts
