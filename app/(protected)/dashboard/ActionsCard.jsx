@@ -1,4 +1,32 @@
+import { useState } from 'react'
+import { sendCleaningCommand } from '@/lib/fastapi'
+
 export default function ActionsCard({ panelData }) {
+  const [commandStatus, setCommandStatus] = useState(null)
+
+  const handleCleaningCommand = async (finalState) => {
+    try {
+      setCommandStatus('sending')
+
+      // Extract device ID from panel data (assuming it's in the format esp32_panel_XX)
+      const deviceId = panelData?.panel_id ? `esp32_${panelData.panel_id.toLowerCase()}` : 'esp32_panel_01'
+
+      const response = await sendCleaningCommand({
+        device_id: deviceId,
+        final_state: finalState
+      })
+
+      setCommandStatus('success')
+      alert(`✅ Commande de nettoyage envoyée!\nAction: start_clean\nÉtat final: ${finalState}\nAppareil: ${deviceId}`)
+
+      setTimeout(() => setCommandStatus(null), 3000)
+    } catch (error) {
+      setCommandStatus('error')
+      alert(`❌ Erreur lors de l'envoi de la commande: ${error.message || 'Erreur inconnue'}`)
+      setTimeout(() => setCommandStatus(null), 3000)
+    }
+  }
+
   const getActionConfig = (action) => {
     if (!action) return null
 
@@ -95,7 +123,7 @@ export default function ActionsCard({ panelData }) {
   }
 
   const actionConfig = getActionConfig(panelData?.action)
-
+  console.log("ActionCard!!: ",panelData)
   if (!actionConfig) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
@@ -200,6 +228,30 @@ export default function ActionsCard({ panelData }) {
           </div>
         </div>
       )}
+
+      {/* Cleaning Command Buttons */}
+      <div className="mt-6 border-t border-gray-200 pt-6">
+        <h4 className="font-semibold text-gray-900 mb-4">Commandes de Nettoyage</h4>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => handleCleaningCommand('dirty')}
+            className="bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+          >
+            <span>🧽</span>
+            <span>Nettoyer (Dirty)</span>
+          </button>
+          <button
+            onClick={() => handleCleaningCommand('clean')}
+            className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+          >
+            <span>✨</span>
+            <span>Nettoyer (Clean)</span>
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-3 text-center">
+          Envoie une commande de nettoyage à l&apos;ESP32 via MQTT
+        </p>
+      </div>
     </div>
   )
 }

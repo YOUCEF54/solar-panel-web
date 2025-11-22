@@ -28,6 +28,7 @@ import ActionsCard from './ActionsCard'
 import HistoryCard from './HistoryCard'
 import NotificationsCard from './NotificationsCard'
 import Navbar from '@/components/Navbar'
+import Image from 'next/image'
 
 export default function DashboardPage() {
   const [selectedPanelId, setSelectedPanelId] = useState(null) // Will be set after fetching available panels
@@ -182,12 +183,23 @@ export default function DashboardPage() {
         const panelsData = await getPanels()
         console.log("S. Fetching available panels from API!",panelsData)
         // Transform API response to match expected format
-        const panels = panelsData.map(panel => ({
-          id: panel.panel_id, // Use panel_id as id for compatibility
-          panel_id: panel.panel_id,
-          device_status: 'online', // Assume online since we got data from API
-          last_update: panel.last_update
-        }))
+        // panelsData is now an array of arrays, where each inner array contains panel data objects
+        const panels = panelsData.map(panelArray => {
+          // Each panelArray contains 1-2 objects (DL data and/or sensor data)
+          // Extract panel_id from the first available object
+          const firstDataObject = panelArray[0]
+          if (!firstDataObject || !firstDataObject.panel_id) {
+            console.warn('Panel data missing panel_id:', panelArray)
+            return null
+          }
+
+          return {
+            id: firstDataObject.panel_id, // Use panel_id as id for compatibility
+            panel_id: firstDataObject.panel_id,
+            device_status: 'online', // Assume online since we got data from API
+            last_update: firstDataObject.timestamp || new Date().toISOString()
+          }
+        }).filter(panel => panel !== null) // Remove any null entries
 
         console.log(`Found ${panels.length} panels:`, panels.map(p => p.panel_id))
         setAvailablePanels(panels)
@@ -214,7 +226,15 @@ export default function DashboardPage() {
 
     try {
       console.log('Fetching panel data for:', selectedPanelId)
-      const panelDataResponse = await getPanelById(selectedPanelId)
+      const panelDataArray = await getPanelById(selectedPanelId)
+
+      // panelDataArray is an array of data objects for this panel
+      // Extract DL data and sensor data from the array
+      const dlData = panelDataArray.find(item => item.predicted_class) || {} // DL data has predicted_class
+      const sensorData = panelDataArray.find(item => item.temperature !== undefined) || {} // Sensor data has temperature
+
+      console.log('DL data:', dlData)
+      console.log('Sensor data:', sensorData)
 
       // Fetch predictions separately
       let predictions = []
@@ -227,24 +247,56 @@ export default function DashboardPage() {
 
       const latestPrediction = predictions.length > 0 ? predictions[0] : null
 
+      // Determine current action based on sensor data and predictions
+      const determineAction = (sensorData, dlData) => {
+        // Check for blocking conditions first
+        if (sensorData?.water_level === 'VIDE') {
+          return 'blocked_water'
+        }
+        if (sensorData?.humidity && sensorData.humidity > 80) {
+          return 'blocked_humidity'
+        }
+        if (sensorData?.light && sensorData.light < 100) {
+          return 'blocked_light'
+        }
+        if (sensorData?.temperature && (sensorData.temperature < 5 || sensorData.temperature > 35)) {
+          return 'blocked_temperature'
+        }
+
+        // Check if cleaning is needed based on predictions
+        const finalState = dlData?.status || sensorData?.ml_prediction
+        if (finalState === 'dirty' || finalState === 'Dusty' || finalState === 'Physical-damage' ||
+            finalState === 'Snow-Covered' || finalState === 'Bird-drop') {
+          return 'start_clean'
+        }
+
+        // Default to waiting
+        return 'wait'
+      }
+
       // Combine panel data with latest prediction
       const combinedData = {
-        ...panelDataResponse,
+        // Start with sensor data as base
+        ...sensorData,
+        // Add DL data
+        ...dlData,
         // Use prediction data if available, otherwise fall back to panel data
-        final_state: latestPrediction?.status || panelDataResponse.ml_prediction || 'unknown',
-        vision_result: latestPrediction?.predicted_class,
-        ml_prediction: panelDataResponse.ml_prediction,
-        confidence: latestPrediction?.confidence || panelDataResponse.ml_confidence,
-        image_url: latestPrediction?.image_url,
-        // Keep sensor data as-is
-        humidity: panelDataResponse.humidity,
-        light: panelDataResponse.light,
-        temperature: panelDataResponse.temperature,
-        water_level: panelDataResponse.water_level,
-        battery_level: panelDataResponse.battery_level,
-        device_status: panelDataResponse.device_status || 'online',
-        last_update: panelDataResponse.last_update,
-        status: (panelDataResponse.device_status || 'online') === 'online' ? 'healthy' : 'offline'
+        final_state: dlData.status || sensorData.ml_prediction || 'unknown',
+        vision_result: dlData.predicted_class,
+        ml_prediction: sensorData.ml_prediction,
+        confidence: dlData.confidence || sensorData.ml_confidence,
+        image_url: dlData.image_url,
+        // Keep sensor data as-is (these will be overridden by spread if they exist in dlData, but that's fine)
+        humidity: sensorData.humidity,
+        light: sensorData.light,
+        temperature: sensorData.temperature,
+        water_level: sensorData.water_level,
+        battery_level: sensorData.battery_level,
+        device_status: sensorData.device_status || 'online',
+        last_update: dlData.timestamp || sensorData.timestamp,
+        status: (sensorData.device_status || 'online') === 'online' ? 'healthy' : 'offline',
+        // Add derived action field
+        action: determineAction(sensorData, dlData)
       }
 
       console.log('Combined panel data:', combinedData)
@@ -298,6 +350,7 @@ export default function DashboardPage() {
         console.log('Loading predictions for panel:', selectedPanelId)
         const response = await getPredictionHistory(selectedPanelId, 10)
         const predictions = response.predictions || []
+        console.log("PREDICTIONS: TEST IMAGE: ",predictions)
 
         // Transform predictions to match expected format
         const formattedPredictions = predictions.map(prediction => ({
@@ -652,7 +705,9 @@ console.log("stat config: ",stateConfig);
 
               <div className="relative aspect-video bg-slate-900 group">
                 {recentPredictions[0]?.image_url ? (
-                  <img
+                  <Image
+                    width={250}
+                    height={250}
                     src={recentPredictions[0].image_url}
                     alt="Solar Panel Analysis"
                     className="w-full h-full object-cover transition-opacity duration-300"
@@ -708,6 +763,9 @@ console.log("stat config: ",stateConfig);
                 </div>
               )}
             </div>
+
+            {/* Actions Card */}
+            <ActionsCard panelData={panelData} />
 
             {/* History Table */}
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[400px]">

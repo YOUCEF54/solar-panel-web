@@ -29,6 +29,7 @@ import {
   setDoc,
   serverTimestamp 
 } from 'firebase/firestore';
+import Image from 'next/image';
 
 // --- Firebase Initialization ---
 const firebaseConfig = JSON.parse(__firebase_config);
@@ -138,12 +139,12 @@ export default function App() {
   // Logic from Section A: Status Messages
   const getStatusMessage = (state) => {
     switch (state) {
-      case 'clean': return "Panneau propre – aucun nettoyage nécessaire";
-      case 'dirty': return "Panneau sale – nettoyage recommandé";
+      case 'clean': return "Panneau propre - aucun nettoyage nécessaire";
+      case 'dirty': return "Panneau sale - nettoyage recommandé";
       case 'wait': return "En attente de meilleures conditions";
-      case 'blocked_water': return "Réservoir vide – impossible de nettoyer";
-      case 'blocked_humidity': return "Humidité trop élevée – mesure impossible";
-      case 'need_human_validation': return "Vision IA incertaine – validation humaine demandée";
+      case 'blocked_water': return "Réservoir vide - impossible de nettoyer";
+      case 'blocked_humidity': return "Humidité trop élevée - mesure impossible";
+      case 'need_human_validation': return "Vision IA incertaine - validation humaine demandée";
       default: return "Système en veille";
     }
   };
@@ -449,7 +450,9 @@ export default function App() {
               </div>
               
               <div className="relative aspect-video bg-slate-900 group">
-                <img 
+                <Image
+                width={500}
+                height={250}
                   src={image_url || "/placeholder.svg"} 
                   alt="Solar Panel Analysis" 
                   className="w-full h-full object-cover transition-opacity duration-300"

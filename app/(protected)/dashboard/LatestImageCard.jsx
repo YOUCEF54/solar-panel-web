@@ -5,12 +5,16 @@ export default function LatestImageCard({ panelData, predictions }) {
   const [showValidation, setShowValidation] = useState(false)
   console.log("Last image card: ",panelData)
 
-  // Get the latest prediction with image
+  // Get the latest prediction with image, or use panelData image if available
   const latestPrediction = predictions.find(pred => pred.image_url) || predictions[0]
+
+  // If no prediction has image, check if panelData has image_url
+  const imageUrl = latestPrediction?.image_url || panelData?.image_url
+  const displayPrediction = imageUrl ? (latestPrediction?.image_url ? latestPrediction : { ...latestPrediction, image_url: panelData.image_url }) : latestPrediction
 
   const handleValidation = async (isCorrect) => {
     try {
-      console.log('Validation submitted:', { isCorrect, predictionId: latestPrediction?.id })
+      console.log('Validation submitted:', { isCorrect, predictionId: displayPrediction?.id })
 
       // Call the feedback API to submit human validation
       const response = await fetch('http://localhost:8000/feedback', {
@@ -19,13 +23,13 @@ export default function LatestImageCard({ panelData, predictions }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          panel_id: latestPrediction?.panel_id || 'P-TEST-3',
-          prediction_id: latestPrediction?.id,
+          panel_id: displayPrediction?.panel_id || 'P-TEST-3',
+          prediction_id: displayPrediction?.id,
           is_correct: isCorrect,
-          predicted_class: latestPrediction?.predicted_class,
-          corrected_class: isCorrect ? null : (latestPrediction?.predicted_class === 'Clean' ? 'Dirty' : 'Clean'),
-          confidence: latestPrediction?.confidence,
-          timestamp: latestPrediction?.timestamp,
+          predicted_class: displayPrediction?.predicted_class,
+          corrected_class: isCorrect ? null : (displayPrediction?.predicted_class === 'Clean' ? 'Dirty' : 'Clean'),
+          confidence: displayPrediction?.confidence,
+          timestamp: displayPrediction?.timestamp,
           reason: isCorrect ? 'Human confirmed AI prediction' : 'Human corrected AI prediction'
         })
       })
@@ -50,25 +54,25 @@ export default function LatestImageCard({ panelData, predictions }) {
   }
 
   const needsHumanValidation = panelData?.final_state === 'need_human_validation' ||
-                              (latestPrediction?.confidence_level === 'low')
+                              (displayPrediction?.confidence_level === 'low')
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-bold text-gray-900">Dernière Image Analysée</h2>
-        {latestPrediction && (
+        {displayPrediction && (
           <span className="text-sm text-gray-500">
-            {new Date(latestPrediction.timestamp).toLocaleString()}
+            {new Date(displayPrediction.timestamp).toLocaleString()}
           </span>
         )}
       </div>
 
-      {latestPrediction?.image_url ? (
+      {imageUrl ? (
         <div className="space-y-4">
           {/* Image Display */}
           <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
             <Image
-              src={latestPrediction.image_url}
+              src={imageUrl}
               alt="Latest panel image"
               fill
               className="object-cover"
@@ -84,32 +88,32 @@ export default function LatestImageCard({ panelData, predictions }) {
               <div>
                 <span className="text-gray-600">Vision IA:</span>
                 <span className={`ml-2 font-bold ${
-                  latestPrediction.predicted_class === 'Clean' ? 'text-green-600' :
-                  latestPrediction.predicted_class === 'Dirty' ? 'text-red-600' :
+                  displayPrediction.predicted_class === 'Clean' ? 'text-green-600' :
+                  displayPrediction.predicted_class === 'Dirty' ? 'text-red-600' :
                   'text-gray-600'
                 }`}>
-                  {latestPrediction.predicted_class || 'N/A'}
+                  {displayPrediction.predicted_class || 'N/A'}
                 </span>
               </div>
 
               <div>
                 <span className="text-gray-600">Confiance:</span>
                 <span className={`ml-2 font-bold ${
-                  latestPrediction.confidence_level === 'high' ? 'text-green-600' :
-                  latestPrediction.confidence_level === 'medium' ? 'text-yellow-600' :
+                  displayPrediction.confidence_level === 'high' ? 'text-green-600' :
+                  displayPrediction.confidence_level === 'medium' ? 'text-yellow-600' :
                   'text-red-600'
                 }`}>
-                  {(latestPrediction.confidence * 100).toFixed(1)}% ({latestPrediction.confidence_level})
+                  {(displayPrediction.confidence * 100).toFixed(1)}% ({displayPrediction.confidence_level})
                 </span>
               </div>
             </div>
 
             {/* Top 3 Classes */}
-            {latestPrediction.all_classes_sorted && (
+            {displayPrediction.all_classes_sorted && (
               <div className="mt-3">
                 <span className="text-sm text-gray-600">Top prédictions:</span>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {latestPrediction.all_classes_sorted.slice(0, 3).map((item, index) => (
+                  {displayPrediction.all_classes_sorted.slice(0, 3).map((item, index) => (
                     <span
                       key={item.class_name}
                       className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
@@ -171,7 +175,7 @@ export default function LatestImageCard({ panelData, predictions }) {
 
           {/* Processing Info */}
           <div className="text-xs text-gray-500 text-center">
-            Image traitée en {latestPrediction.processing_time_ms}ms • {latestPrediction.panel_id}
+            Image traitée en {displayPrediction.processing_time_ms}ms • {displayPrediction.panel_id}
           </div>
         </div>
       ) : (
