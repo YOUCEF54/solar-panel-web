@@ -3,6 +3,7 @@ import { useState } from 'react'
 
 export default function LatestImageCard({ panelData, predictions }) {
   const [showValidation, setShowValidation] = useState(false)
+  console.log("Last image card: ",panelData)
 
   // Get the latest prediction with image
   const latestPrediction = predictions.find(pred => pred.image_url) || predictions[0]

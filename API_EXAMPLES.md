@@ -97,7 +97,7 @@ curl http://localhost:3000/api/panels
     "panel_id": "P-1",
     "last_status": "clean",
     "last_confidence": 0.98,
-    "thumbnail": "https://res.cloudinary.com/.../panel_P-1_thumb.jpg",
+    "image_url": "https://res.cloudinary.com/.../panel_P-1_thumb.jpg",
     "last_update": "2024-01-01T10:00:00Z"
   }
 ]
