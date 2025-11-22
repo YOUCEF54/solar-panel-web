@@ -39,36 +39,7 @@ export default function DashboardPage() {
   const [error, setError] = useState(null)
   const [user, setUser] = useState(null)
 
-  // Authentication setup (mocked for testing)
-  useEffect(() => {
-    // Temporarily mock authentication for testing
-    const mockUser = { email: 'test@example.com', uid: 'test-uid' };
-    setUser(mockUser);
 
-    // Mock backend tokens are already set in AuthProvider
-    console.log('Mock authentication set up for testing');
-
-    // Original Firebase auth code (commented out for testing)
-    // const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-    //   setUser(currentUser)
-    //   if (currentUser) {
-    //     try {
-    //       // Sync Firebase auth with backend to get JWT tokens
-    //       await syncFirebaseAndGetTokens()
-    //       console.log('Backend authentication synced successfully')
-    //     } catch (error) {
-    //       console.error('Failed to sync backend authentication:', error)
-    //       // If authentication fails, redirect to login
-    //       window.location.href = '/auth/login'
-    //     }
-    //   } else {
-    //     // If no user, redirect to login
-    //     window.location.href = '/auth/login'
-    //   }
-    // })
-    //
-    // return () => unsubscribe()
-  }, [])
 
   // Helper functions for state configuration
   const getStateConfig = (state) => {
