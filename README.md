@@ -1,6 +1,6 @@
 # Smart Solar Panel Cleaner
 
-A modern IoT + Computer Vision web application for monitoring and cleaning solar panels with ML-powered dirt/damage detection, built with Next.js 14, TailwindCSS, and FastAPI.
+A modern IoT + Computer Vision web application for monitoring and cleaning solar panels with ML/DL-powered dirt/damage detection, built with Next.js 14, TailwindCSS, and FastAPI.
 
 ## 🏗️ Architecture
 
@@ -93,6 +93,7 @@ project-root/
    - Cloudinary credentials
    - FastAPI URL
    - Database URL (if using)
+   - Firebase Authentication credentials
 
 4. **Run the development server**
    ```bash
@@ -127,6 +128,15 @@ FASTAPI_API_TOKEN=xxxx
 
 # Database (optional)
 DATABASE_URL=postgresql://user:password@localhost:5432/smart_solar_panel_cleaner
+
+#Firebase Authentication
+NEXT_PUBLIC_FIREBASE_API_KEY=xxxxxxxxxxxxxx
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-name.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-name
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-name.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=xxxxxxxxxxxxx
+NEXT_PUBLIC_FIREBASE_APP_ID=1:xxxxxxxxxxx:web:xxxxxxxxx
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=xxxxxxxxxxxx
 ```
 
 ## 🔌 API Endpoints
@@ -175,15 +185,6 @@ The authentication system is set up with placeholder logic. To implement:
 2. Update `app/auth/middleware.js`
 3. Add protected routes in `middleware.js` (root level)
 
-## 🚧 TODO
-
-- [ ] Integrate real database (PostgreSQL, MongoDB, etc.)
-- [ ] Implement actual authentication
-- [ ] Connect to real FastAPI ML service
-- [ ] Add real-time updates (WebSockets/SSE)
-- [ ] Implement user roles and permissions
-- [ ] Add analytics dashboard
-- [ ] Set up automated testing
 
 ## 📄 License
 
